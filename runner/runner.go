@@ -25,7 +25,7 @@ func (r *Runner) Run(from, to string) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	start := time.Now()
+	searchedAt := time.Now()
 
 	journeys, err := r.TfL.GetJourneys(ctx, from, to, maxJourneys)
 	if err != nil {
@@ -34,7 +34,7 @@ func (r *Runner) Run(from, to string) {
 	}
 
 	log.Printf("level=info from=%q to=%q journeys_found=%d tfl_duration_ms=%d",
-		from, to, len(journeys), time.Since(start).Milliseconds())
+		from, to, len(journeys), time.Since(searchedAt).Milliseconds())
 
 	if len(journeys) == 0 {
 		if err := r.Telegram.SendNoJourneysMessage(ctx, r.ChatID, from, to); err != nil {
@@ -43,11 +43,8 @@ func (r *Runner) Run(from, to string) {
 		return
 	}
 
-	for i, j := range journeys {
-		msg := telegram.FormatJourney(i+1, j)
-		if err := r.Telegram.SendMessage(ctx, r.ChatID, msg); err != nil {
-			log.Printf("level=error msg=\"telegram send failed\" journey_index=%d error=%q", i+1, err)
-			break
-		}
+	msg := telegram.FormatJourneys(from, to, searchedAt, journeys)
+	if err := r.Telegram.SendMessage(ctx, r.ChatID, msg); err != nil {
+		log.Printf("level=error msg=\"telegram send failed\" error=%q", err)
 	}
 }

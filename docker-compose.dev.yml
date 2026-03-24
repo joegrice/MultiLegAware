@@ -21,9 +21,8 @@ services:
       - TELEGRAM_BOT_TOKEN=your-token-here
       - TELEGRAM_CHAT_ID=your-chat-id-here
       - TFL_APP_KEY=your-tfl-key-here
-      - API_KEY=dev-api-key
       - ORIGIN=SW1A 1AA
-      - DESTINATION=EC2V 8RT
+      - DESTINATION=EC1N 2TD
       - MORNING_CRON=0 30 7 * * MON-FRI
       - AFTERNOON_CRON=0 30 17 * * MON-FRI
       - PORT=8080

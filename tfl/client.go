@@ -62,6 +62,8 @@ func (c *Client) GetJourneys(ctx context.Context, from, to string, limit int) ([
 		return nil, fmt.Errorf("building request: %w", err)
 	}
 
+	req.Header.Set("User-Agent", "MultiLegAware/1.0")
+
 	q := req.URL.Query()
 	q.Set("nationalSearch", "true")
 	if c.appKey != "" {

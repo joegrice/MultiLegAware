@@ -35,6 +35,12 @@ GET https://api.tfl.gov.uk/Journey/JourneyResults/{from}/to/{to}
 `{from}` and `{to}` are URL-path-encoded using `url.PathEscape` in Go
 (spaces become `%20`).
 
+### Request headers set by this service
+
+| Header       | Value                | Reason                                                                  |
+|--------------|----------------------|-------------------------------------------------------------------------|
+| `User-Agent` | `MultiLegAware/1.0`  | TfL returns `403 Forbidden` for the default Go user-agent (`Go-http-client/1.1`) |
+
 ### Query parameters used by this service
 
 | Parameter       | Value used        | Effect                                                                 |

@@ -41,8 +41,8 @@
 ┌───────────────┐  ┌────────────────────────────────┐
 │  TfL Unified  │  │  Telegram Bot API              │
 │  API          │  │  POST /bot{TOKEN}/sendMessage  │
-│               │  │  (3 messages per run,          │
-│  GET          │  │   sent sequentially)           │
+│               │  │  (1 message per run,           │
+│  GET          │  │   all journeys combined)       │
 │  /Journey/    │  └────────────────────────────────┘
 │  JourneyResult│
 │  s/{from}/to/ │
@@ -147,19 +147,19 @@ constant-time comparison prevents timing-based key enumeration attacks.
 
 ---
 
-### Sequential Telegram message sends
+### Single Telegram message per run
 
-**Chosen:** Journey messages are sent one at a time in a `for` loop. A failure
-on any message breaks the loop.
+**Chosen:** All journeys for a run are formatted into one message by
+`telegram.FormatJourneys` and sent with a single `SendMessage` call.
 
-**Alternatives considered:** Concurrent sends with `sync.WaitGroup`, fire-and-forget goroutines.
+**Alternatives considered:** One message per journey (previous approach);
+concurrent sends with `sync.WaitGroup`.
 
-**Why:** Telegram delivers messages in the order they are sent by the bot, but
-only if sent sequentially within the same chat. Concurrent sends can arrive
-out of order, making "Journey 1 / Journey 2 / Journey 3" appear scrambled.
-Sequential sends are also simpler to reason about for error handling: a failure
-on message 2 stops the run rather than silently dropping a message while others
-succeed.
+**Why:** A single message is more readable — the origin, destination, and
+search time appear once as a header, and all journey options sit below it as a
+self-contained block. It also eliminates ordering concerns (concurrent sends
+can arrive out of order) and reduces the number of Telegram API calls per run
+from three to one.
 
 ---
 
@@ -212,6 +212,12 @@ but subject to stricter rate limiting. With a registered free key, limits are
 generous for a twice-daily use pattern (well within the free tier of ~500
 requests/day per key as documented on the TfL API portal).
 
+### User-Agent
+
+TfL blocks requests sent with the default Go HTTP client user-agent
+(`Go-http-client/1.1`) with a `403 Forbidden`. All requests from `tfl/client.go`
+set `User-Agent: MultiLegAware/1.0` to avoid this.
+
 ### Postcode support
 
 TfL accepts full UK postcodes natively in the URL path — no geocoding or
@@ -261,5 +267,27 @@ replacement for all API-derived strings (TfL instruction summaries, postcode
 values). Do not pass unescaped user-controlled or API-controlled strings
 directly as MarkdownV2 text.
 
-Bold markers themselves (`*Journey 1*`) must **not** be escaped — they are
-intentional formatting.
+Bold markers themselves (`*Journey 1*`) and italic markers (`_07:30 Mon 24 Mar_`)
+must **not** be escaped — they are intentional formatting.
+
+### Message structure
+
+Each run produces **one Telegram message** containing:
+
+```
+*SW1A 1AA → EC1N 2TD*
+_07:30 Mon 24 Mar_
+
+*Journey 1* — 34 mins
+• 🚶 Walk to Victoria Station — 13 min
+• 🚇 Victoria line to Oxford Circus — 4 min
+• 🚇 Central line to Chancery Lane — 5 min
+• 🚶 Walk to EC1N 2TD — 7 min
+
+*Journey 2* — 38 mins
+...
+```
+
+The header line is bold; the search time is italic. Each leg is a bullet.
+All user-derived and API-derived strings (postcodes, instruction summaries) are
+passed through `escapeMarkdownV2` before insertion.

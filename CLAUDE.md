@@ -58,15 +58,16 @@ Owns all communication with the Telegram Bot API. `telegram.Client` exposes
 `SendMessage` (sends a single MarkdownV2 message to a chat ID) and
 `SendNoJourneysMessage` (sends a canned "no journeys found" error). The package
 also contains the mode → emoji mapping, the MarkdownV2 escape function, and
-`FormatJourney`, which converts a `tfl.Journey` into a ready-to-send string.
+`FormatJourneys`, which formats all journeys for a run into a single
+ready-to-send string with a header showing origin, destination, and search time.
 
 **`runner` (`runner/runner.go`)**
 Orchestrates a single journey lookup-and-dispatch cycle. `runner.Runner.Run`
 creates a fresh context with a 10-second timeout, calls `tfl.Client.GetJourneys`,
-handles the zero-results case, then sends messages sequentially via
-`telegram.Client.SendMessage`. All errors are logged; `Run` has no return value
-because it is invoked from the cron scheduler where there is no caller to
-surface errors to.
+handles the zero-results case, then formats all results into a single message
+via `telegram.FormatJourneys` and sends it with one `telegram.Client.SendMessage`
+call. All errors are logged; `Run` has no return value because it is invoked
+from the cron scheduler where there is no caller to surface errors to.
 
 > **Planned package:** When the on-demand HTTP endpoint is added, a
 > `handler/journey.go` will own the HTTP-layer orchestration, reusing `runner`
@@ -83,10 +84,9 @@ cron scheduler fires
         ├─► tfl.Client.GetJourneys(ctx, from, to, 3)
         │     └─► GET https://api.tfl.gov.uk/Journey/JourneyResults/{from}/to/{to}
         ├─► [0 journeys] telegram.Client.SendNoJourneysMessage
-        └─► [n journeys] for each journey:
-              telegram.FormatJourney(i, journey)
-                └─► telegram.Client.SendMessage(ctx, chatID, text)
-                      └─► POST https://api.telegram.org/bot{TOKEN}/sendMessage
+        └─► [n journeys] telegram.FormatJourneys(from, to, searchedAt, journeys)
+              └─► telegram.Client.SendMessage(ctx, chatID, text)
+                    └─► POST https://api.telegram.org/bot{TOKEN}/sendMessage
 ```
 
 **(b) On-demand HTTP trigger (planned — not yet implemented)**
@@ -208,7 +208,7 @@ When tests are added, follow this layout:
 | File                          | What to test                                           |
 |-------------------------------|--------------------------------------------------------|
 | `tfl/client_test.go`          | `GetJourneys` against a mock `httptest.Server`         |
-| `telegram/client_test.go`     | `SendMessage`, `FormatJourney`, `escapeMarkdownV2`     |
+| `telegram/client_test.go`     | `SendMessage`, `FormatJourneys`, `escapeMarkdownV2`    |
 | `runner/runner_test.go`       | `Run` with stubbed TfL and Telegram clients            |
 | `handler/journey_test.go`     | HTTP handler + `apiKeyMiddleware` via `httptest`       |
 
@@ -225,12 +225,15 @@ testify, gomock, or any other test framework.
 - No other files need to change.
 
 ### Changing the Telegram message format
-- Edit `telegram/client.go`, `FormatJourney` function.
+- Edit `telegram/client.go`, `FormatJourneys` function.
+- The function signature is `FormatJourneys(from, to string, searchedAt time.Time, journeys []tfl.Journey) string`.
+- It produces a single MarkdownV2 string: a bold `from → to` header, an italic
+  search time, then each journey as a titled block with one bullet per leg.
 - Verify output manually by sending a real message or writing a unit test.
 - **MarkdownV2 caution:** every character in `_, *, [, ], (, ), ~, \`, >, #, +, -, =, |, {, }, ., !`
   must be escaped with a backslash in message text. Use the existing
   `escapeMarkdownV2` function for any user-derived or API-derived strings.
-  Bold markers (`*...*`) must not be escaped.
+  Bold markers (`*...*`) and italic markers (`_..._`) must not be escaped.
 
 ### Adding a new environment variable
 1. Add a `mustEnv` (required) or `os.Getenv` (optional) call in `main.go`.

@@ -130,18 +130,25 @@ func escapeMarkdownV2(s string) string {
 	return replacer.Replace(s)
 }
 
-// FormatJourney renders a single journey as a MarkdownV2 string.
-func FormatJourney(index int, j tfl.Journey) string {
-	var legs []string
-	for _, leg := range j.Legs {
-		emoji := modeEmoji(leg.Mode.Name)
-		summary := escapeMarkdownV2(leg.Instruction.Summary)
-		legs = append(legs, fmt.Sprintf("%s %s %d min", emoji, summary, leg.Duration))
+// FormatJourneys renders all journeys as a single MarkdownV2 message with a
+// header showing the origin, destination, and search time.
+func FormatJourneys(from, to string, searchedAt time.Time, journeys []tfl.Journey) string {
+	header := fmt.Sprintf("*%s → %s*\n_%s_",
+		escapeMarkdownV2(from),
+		escapeMarkdownV2(to),
+		escapeMarkdownV2(searchedAt.Format("15:04 Mon 2 Jan")),
+	)
+	lines := []string{header}
+	for i, j := range journeys {
+		lines = append(lines, "") // blank line between journeys
+		lines = append(lines, fmt.Sprintf("*Journey %d* — %d mins", i+1, j.Duration))
+		for _, leg := range j.Legs {
+			emoji := modeEmoji(leg.Mode.Name)
+			summary := escapeMarkdownV2(leg.Instruction.Summary)
+			lines = append(lines, fmt.Sprintf("• %s %s — %d min", emoji, summary, leg.Duration))
+		}
 	}
-
-	header := fmt.Sprintf("*Journey %d* — %d mins", index, j.Duration)
-	body := strings.Join(legs, " → ")
-	return header + "\n" + body
+	return strings.Join(lines, "\n")
 }
 
 // SendNoJourneysMessage sends the "no journeys found" error message.

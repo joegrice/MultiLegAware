@@ -82,7 +82,8 @@ If a cron expression is malformed the process exits immediately:
 2024/11/25 07:30:01 level=info from="SW1A 1AA" to="EC2V 8RT" journeys_found=3 tfl_duration_ms=843
 ```
 
-If TfL returns no results:
+A single Telegram message is sent containing all three journeys. If TfL returns
+no results, a "no journeys found" message is sent instead:
 
 ```
 2024/11/25 07:30:01 level=info from="SW1A 1AA" to="EC2V 8RT" journeys_found=0 tfl_duration_ms=712
@@ -130,7 +131,7 @@ MORNING_CRON=0 * * * * *
 | Service crashes on startup | Invalid cron expression | Check exit log for `level=fatal msg="invalid MORNING_CRON expression"` | Fix the cron expression (see cron format in `README.md`) |
 | HTTP 401 on POST /journey | Wrong or missing API key header | Check `X-API-Key` header value | Use the correct key set in `API_KEY` env var (when auth middleware is implemented) |
 | Journey times look wrong / outdated | TfL "leave now" is based on server clock | Verify the container clock: `docker compose exec journey-service date` | Ensure container time is correct; TfL results reflect real-time conditions at request time |
-| Telegram 400 Bad Request error | MarkdownV2 escaping issue in a TfL instruction summary | Note the failing `instruction.summary` value in logs; test escaping manually | Fix `escapeMarkdownV2` in `telegram/client.go` or handle the specific character |
+| Telegram 400 Bad Request error | MarkdownV2 escaping issue in a TfL instruction summary or postcode | Note the failing value in logs; test escaping manually | Fix `escapeMarkdownV2` in `telegram/client.go` or handle the specific character |
 
 ---
 
