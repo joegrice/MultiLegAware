@@ -144,27 +144,23 @@ fly deploy
 
 One message is sent per scheduled run containing all journey options:
 
----
-**SW1A 1AA → EC1N 2TD**
-_07:30 Mon 24 Mar_
-
-**Journey 1** — 32 mins
-• 🚶 Walk to St James's Park Station — 5 min
-• 🚇 District line to Westminster — 2 min
-• 🚇 Jubilee line to Chancery Lane — 11 min
-• 🚶 Walk to EC1N 2TD — 9 min
-
-**Journey 2** — 35 mins
-• 🚶 Walk to Victoria — 3 min
-• 🚌 Bus 88 to Oxford Circus — 22 min
-• 🚶 Walk to EC1N 2TD — 10 min
-
-**Journey 3** — 41 mins
-• 🚶 Walk to St James's Park Station — 5 min
-• 🚇 Circle line to Bank — 20 min
-• 🚶 Walk to EC1N 2TD — 14 min
-
----
+> **SW1A 1AA → EC1N 2TD** &nbsp; _07:30 Mon 24 Mar_
+>
+> **Journey 1** — 32 mins
+> - 🚶 Walk to St James's Park Station — 5 min
+> - 🚇 District line to Westminster — 2 min
+> - 🚇 Jubilee line to Chancery Lane — 11 min
+> - 🚶 Walk to EC1N 2TD — 9 min
+>
+> **Journey 2** — 35 mins
+> - 🚶 Walk to Victoria — 3 min
+> - 🚌 Bus 88 to Oxford Circus — 22 min
+> - 🚶 Walk to EC1N 2TD — 10 min
+>
+> **Journey 3** — 41 mins
+> - 🚶 Walk to St James's Park Station — 5 min
+> - 🚇 Circle line to Bank — 20 min
+> - 🚶 Walk to EC1N 2TD — 14 min
 
 The header shows origin, destination, and the time the search was made. The afternoon run reverses direction automatically.
 
