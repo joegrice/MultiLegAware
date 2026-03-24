@@ -37,7 +37,7 @@ Register for a free key at [https://api-portal.tfl.gov.uk](https://api-portal.tf
 | `TELEGRAM_CHAT_ID`   | yes    | Chat ID that receives journey messages                          |
 | `TFL_APP_KEY`        | yes    | TfL Unified API key                                             |
 | `ORIGIN`             | yes    | Journey start for the morning run (e.g. `SW1A 1AA`)            |
-| `DESTINATION`        | yes    | Journey end for the morning run (e.g. `EC2V 8RT`)              |
+| `DESTINATION`        | yes    | Journey end for the morning run (e.g. `EC1N 2TD`)              |
 | `MORNING_CRON`       | yes    | 6-field cron expression for the A→B run (see below)            |
 | `AFTERNOON_CRON`     | yes    | 6-field cron expression for the B→A run (see below)            |
 | `PORT`               | no     | HTTP port for the health endpoint (default: `8080`)             |
@@ -84,7 +84,7 @@ export PORT=8080   # optional
 go run .
 ```
 
-The service logs each scheduled run to stdout and sends three Telegram messages per run. To test immediately without waiting for the schedule, temporarily set a cron expression that fires every minute:
+The service logs each scheduled run to stdout and sends one Telegram message per run containing all journey options. To test immediately without waiting for the schedule, temporarily set a cron expression that fires every minute:
 
 ```bash
 export MORNING_CRON="0 * * * * *"
@@ -142,18 +142,30 @@ fly deploy
 
 ## Example Telegram Output
 
-Three messages are sent per scheduled run:
+One message is sent per scheduled run containing all journey options:
 
 ```
-Journey 1 — 32 mins
-🚶 Walk 5 min → 🚇 Jubilee line to Westminster 18 min → 🚶 Walk 9 min
+*SW1A 1AA → EC1N 2TD*
+_07:30 Mon 24 Mar_
 
-Journey 2 — 35 mins
-🚶 Walk 3 min → 🚌 Bus 88 to Oxford Circus 22 min → 🚶 Walk 10 min
+*Journey 1* — 32 mins
+• 🚶 Walk to St James's Park Station — 5 min
+• 🚇 District line to Westminster — 2 min
+• 🚇 Jubilee line to Chancery Lane — 11 min
+• 🚶 Walk to EC1N 2TD — 9 min
 
-Journey 3 — 41 mins
-🚶 Walk 7 min → 🚇 Central line to Bank 20 min → 🚌 Bus 21 to Cannon Street 14 min
+*Journey 2* — 35 mins
+• 🚶 Walk to Victoria — 3 min
+• 🚌 Bus 88 to Oxford Circus — 22 min
+• 🚶 Walk to EC1N 2TD — 10 min
+
+*Journey 3* — 41 mins
+• 🚶 Walk to St James's Park Station — 5 min
+• 🚇 Circle line to Bank — 20 min
+• 🚶 Walk to EC1N 2TD — 14 min
 ```
+
+The header shows origin, destination, and the time the search was made. The afternoon run reverses direction automatically.
 
 ---
 
